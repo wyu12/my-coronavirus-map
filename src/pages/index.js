@@ -5,6 +5,7 @@ import L from 'leaflet';
 import Layout from 'components/Layout';
 import Container from 'components/Container';
 import Map from 'components/Map';
+import axios from 'axios';
 
 const LOCATION = {
   lat: 38.9072,
@@ -22,7 +23,41 @@ const IndexPage = () => {
    */
 
   async function mapEffect({ leafletElement: map } = {}) {
-        //this function intentionally left blank
+        let response; //stores what API returns
+
+        try{
+          response = await axios.get('https://corona.lmao.ninja/v2/countries');
+        } catch(e){
+          console.log(`Failed to fetch countries: ${e.message}`, e);
+          return;
+        }
+
+        const { data = [] } = response; //data is an array that stores all the data fetched
+
+        console.log(data);
+
+        if(!(Array.isArray(data) && data.length > 0)) return;
+        const geoJson = {
+          type: 'FeatureCollection',
+          features: data.map((country = {}) => {  //"country" object represents an element from the original array
+
+            const { countryInfo = {} } = country; //extract countryInfo array from the "country" object
+            const { lat, long: lng } = countryInfo; //extract lat and lng info from countryInfo array
+
+            return{
+              type: 'Feature', 
+              properties: {
+                ...country, //JS spread syntax: this array (iterable) will fill in all the elements
+              },
+              geometry: {
+                type: 'Point',
+                coordinates: [ lng, lat ]
+              }
+            }
+
+          })
+        }
+        console.log(geoJson);
   }
 
   const mapSettings = {
