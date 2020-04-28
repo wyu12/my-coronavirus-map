@@ -33,10 +33,8 @@ const IndexPage = () => {
         }
 
         const { data = [] } = response; //data is an array that stores all the data fetched
-
-        console.log(data);
-
         if(!(Array.isArray(data) && data.length > 0)) return;
+
         const geoJson = {
           type: 'FeatureCollection',
           features: data.map((country = {}) => {  //"country" object represents an element from the original array
@@ -56,8 +54,58 @@ const IndexPage = () => {
             }
 
           })
-        }
-        console.log(geoJson);
+        };
+
+        const geoJsonLayers = new L.GeoJSON(geoJson, {  //note: this second parameter represents an "Options" object
+          pointToLayer: (feature = {}, latlng ) => {  //we are defining a custom pointToLayer function
+            const { properties = {} } = feature;
+            let updatedFormatted;
+            let casesString;
+
+            const {
+              country,
+              updated,
+              cases,
+              deaths,
+              recovered
+            } = properties;   //destructuring data from properties list
+
+            casesString = `${cases}`;
+
+            if(cases > 1000){ //use "K" instead of the raw number (thousands)
+              casesString = `${casesString.slice(0,-3)}k+`
+            }
+            if (updated) {
+              updatedFormatted = new Date(updated).toLocaleString(); //format the date from the raw number to a date string
+            }
+            const html = `
+              <span class="icon-marker">
+                <span class="icon-marker-tooltip">
+                  <h2>${country}</h2>
+                  <ul>
+                    <li><strong>Confirmed:</strong> ${casesString} </li>
+                    <li><strong>Deaths: </strong>${deaths}</li>
+                    <li><strong>Recovered: </strong>${recovered}</li>
+                    <li><strong>Last Updated: </strong>${updatedFormatted}</li>
+                  </ul>
+                </span>
+              </span>
+            `;
+
+            return L.marker( latlng, {
+
+              icon: L.divIcon({
+                className: 'icon',
+                html
+                }),
+                riseOnHover: true
+            });
+          }
+
+        });//end geoJSON line
+
+        geoJsonLayers.addTo(map);
+
   }
 
   const mapSettings = {
